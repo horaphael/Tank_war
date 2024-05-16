@@ -1,0 +1,26 @@
+name: Action
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  EXECUTABLES: "love-11.5-x86_64"
+
+jobs:
+
+  check_size:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check repository size
+        run: |
+          size=$(du -sm . | cut -f1)
+          if [ $size -gt 30 ]; then
+            echo "La taille du répertoire dépasse la limite de 30 Mo."
+            exit 1
+          else
+            echo "La taille du répertoire est dans la limite acceptable."
+          fi
