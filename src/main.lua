@@ -1,17 +1,17 @@
-local Game = require("game")
+local game = require("game")
 
 function love.load()
-    Game.load()
+    game.load()
+    love.window.setMode(1920, 1080)
+    love.window.setTitle("Fenêtre avec Image")
+    -- sound = love.audio.newSource("music.ogg", "stream")
+    -- love.audio.play(sound)
 end
 
 function love.update(dt)
-    Game.update(dt)
+    game.update(dt)
 end
 
 function love.draw()
-    Game.draw()
-end
-
-function love.keypressed(key)
-    Game.keypressed(key)
+    game.draw()
 end

@@ -1,129 +1,73 @@
-local Player = require("player")
-local Bullet = require("bullet")
+local game = {}
 
-local Game = {}
+function game.load()
+    game.image = love.graphics.newImage("back.jpg")
+    game.player1 = love.graphics.newImage("tank.png")
+    game.player2 = love.graphics.newImage("tank.png")
 
-local player1
-local player2
-local bullets = {}
-local bullets2 = {}
-local background
-local gameOver = false
-local winner
+    game.scaleX = 3.5
+    game.scaleY = 2
 
-function Game.load()
-    love.window.setTitle("Déplacement de deux carrés avec une image")
-    love.window.setMode(800, 600)
-    
-    player1 = Player.load("tank.png", 100, 100, 5)
-    player1.controls = {right = "d", left = "q", down = "s", up = "z"}
+    game.player1_x = 100
+    game.player1_y = 100
+    game.player1_speed = 200
+    game.player1_rotation = 0
 
-    player2 = Player.load("tank.png", 620, 100, 5)
-    player2.controls = {right = "right", left = "left", down = "down", up = "up"}
-
-    background = love.graphics.newImage("back.png")
+    game.player2_x = 1600
+    game.player2_y = 100
+    game.player2_speed = 200
+    game.player2_rotation = 0
 end
 
-function Game.update(dt)
-    if not gameOver then
-        Player.update(player1, dt)
-        Player.update(player2, dt)
+function game.update(dt)
+    -- FAIRE BOUGER LE PLAYER 1
+    if love.keyboard.isDown('z') then
+        game.player1_rotation = math.rad(180)
+        game.player1_y = game.player1_y - game.player1_speed * dt  
+    end
+    if love.keyboard.isDown('s') then
+        game.player1_rotation = math.rad(360)
+        game.player1_y = game.player1_y + game.player1_speed * dt
+    end
+    if love.keyboard.isDown('q') then
+        game.player1_rotation = math.rad(90)
+        game.player1_x = game.player1_x - game.player1_speed * dt
+    end
+    if love.keyboard.isDown('d') then
+        game.player1_rotation = math.rad(-90)
+        game.player1_x = game.player1_x + game.player1_speed * dt
+    end
 
-        for i, bullet in ipairs(bullets) do
-            Bullet.update(bullet, dt)
-            if bullet.x > love.graphics.getWidth() then
-                table.remove(bullets, i)
-            elseif checkCollision(bullet, player2) then
-                table.remove(bullets, i)
-                player2.lives = player2.lives - 1
-                if player2.lives <= 0 then
-                    player2.isAlive = false
-                    gameOver = true
-                    winner = "Joueur 1"
-                end
-            end
-        end
-
-        for i, bullet in ipairs(bullets2) do
-            Bullet.update(bullet, dt)
-            if bullet.x < 0 then
-                table.remove(bullets2, i)
-            elseif checkCollision(bullet, player1) then
-                table.remove(bullets2, i)
-                player1.lives = player1.lives - 1
-                if player1.lives <= 0 then
-                    player1.isAlive = false
-                    gameOver = true
-                    winner = "Joueur 2"
-                end
-            end
-        end
+    -- FAIRE BOUGER LE PLAYER 2
+    if love.keyboard.isDown("up") then
+        game.player2_rotation = math.rad(180)
+        game.player2_y = game.player2_y - game.player2_speed * dt
+    end
+    if love.keyboard.isDown("down") then
+        game.player2_rotation = math.rad(360)
+        game.player2_y = game.player2_y + game.player2_speed * dt
+    end
+    if love.keyboard.isDown("left") then
+        game.player2_rotation = math.rad(90)
+        game.player2_x = game.player2_x - game.player2_speed * dt
+    end
+    if love.keyboard.isDown("right") then
+        game.player2_rotation = math.rad(-90)
+        game.player2_x = game.player2_x + game.player2_speed * dt
     end
 end
 
-function Game.draw()
-    love.graphics.clear()
-    love.graphics.draw(background, 0, 0)
 
-    Player.draw(player1)
-    Player.draw(player2)
+function game.draw()
+    local centerX = game.player1:getWidth() / 2
+    local centerY = game.player1:getHeight() / 2
 
-    love.graphics.setColor(1, 1, 1)
+    local centerX2 = game.player2:getWidth() / 2
+    local centerY2 = game.player2:getHeight() / 2
 
-    love.graphics.print("Vies Joueur 1: " .. player1.lives, 10, 10)
-    love.graphics.print("Vies Joueur 2: " .. player2.lives, 10, 30)
-
-    for _, bullet in ipairs(bullets) do
-        love.graphics.setColor(1, 0, 0)
-        Bullet.draw(bullet)
-        love.graphics.setColor(1, 1, 1)
-    end
-
-    for _, bullet in ipairs(bullets2) do
-        love.graphics.setColor(1, 0, 0)
-        Bullet.draw(bullet)
-        love.graphics.setColor(1, 1, 1)
-    end
-
-    if gameOver then
-        love.graphics.setColor(0.5, 0.5, 0.5, 0.7)
-        love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.printf(winner .. " a gagné !", 0, love.graphics.getHeight() / 2, love.graphics.getWidth(), "center")
-        love.graphics.setColor(0, 1, 0)
-        love.graphics.rectangle("fill", love.graphics.getWidth() / 2 - 50, love.graphics.getHeight() / 2 + 50, 100, 40)
-        love.graphics.setColor(1, 1, 1)
-        love.graphics.printf("Restart", 0, love.graphics.getHeight() / 2 + 70, love.graphics.getWidth(), "center")
-    end
+    love.graphics.draw(game.image, 0, 0, 0, game.scaleX, game.scaleY)
+    love.graphics.draw(game.player1, game.player1_x + centerX, game.player1_y + centerY, game.player1_rotation, 1, 1, centerX, centerY)
+    love.graphics.draw(game.player2, game.player2_x + centerX2, game.player2_y + centerY2, game.player2_rotation, 1, 1, centerX2, centerY2)
 end
 
-function Game.keypressed(key)
-    if key == "t" then
-        local bullet = Bullet.load(player1.x + player1.size, player1.y + player1.size / 2, 500)
-        table.insert(bullets, bullet)
-    end
-
-    if key == "space" then
-        local bullet = Bullet.load(player2.x - player2.size, player2.y + player2.size / 2, -500)
-        table.insert(bullets2, bullet)
-    end
-
-    if gameOver and key == "r" then
-        player1.lives = 5
-        player2.lives = 5
-        player1.isAlive = true
-        player2.isAlive = true
-        bullets = {}
-        bullets2 = {}
-        gameOver = false
-    end
-end
-
-function checkCollision(a, b)
-    return a.x < b.x + b.size and
-           a.x + a.width > b.x and
-           a.y < b.y + b.size and
-           a.y + a.height > b.y
-end
-
-return Game
+return game
