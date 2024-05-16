@@ -1,11 +1,12 @@
 local game = require("game")
-
+local volume = 50
 function love.load()
     game.load()
-    love.window.setMode(1920, 1080)
+    love.window.setMode(1920, 1030)
     love.window.setTitle("Fenêtre avec Image")
-    -- sound = love.audio.newSource("music.ogg", "stream")
-    -- love.audio.play(sound)
+    sound = love.audio.newSource("woo_scary.ogg", "stream")
+    love.audio.setVolume(volume)
+    love.audio.play(sound)
 end
 
 function love.update(dt)
