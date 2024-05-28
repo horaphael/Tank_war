@@ -2,32 +2,52 @@ local game = {}
 local Bullet = require("bullet")
 local bullets = {}
 local bullets2 = {}
-local canShoot = true
 local move_player = require("move_player")
 local quads1 = {}
 local quads2 = {}
 local animationSpeed = 0.1
+
 local player1 = {
     shooting = false,
     currentFrame = 1,
     timer = 0,
-    health = 5,
-    isAlive = true
+    health = 10,
+    isAlive = true,
+    fireRate = 0.5,
+    lastShotTime = 0,
+    bonusActive = false,
+    bonusTimer = 0
 }
+
 local player2 = {
     shooting = false,
     currentFrame = 1,
     timer = 0,
-    health = 5,
-    isAlive = true
+    health = 10,
+    isAlive = true,
+    fireRate = 0.5,
+    lastShotTime = 0,
+    bonusActive = false,
+    bonusTimer = 0
 }
+
+local bonus_bullet = {
+    x = 500,
+    y = 300,
+    width = 50,
+    height = 50,
+    active = true,
+    duration = 5
+}
+
 local gameOver = false
 local winner = ""
 
 function game.load()
-    game.image = love.graphics.newImage("assets/back.jpg")
+    game.background = love.graphics.newImage("assets/back.jpg")
     game.player1 = love.graphics.newImage("assets/Blue/Bodies/body_tracks.png") -- Player 1 tank sprite
     game.player2 = love.graphics.newImage("assets/Red/Bodies/body_tracks.png") -- Player 2 tank sprite
+    game.bonus_bullet_image = love.graphics.newImage("assets/bonus_bullet.png") -- Bonus bullet sprite
 
     game.scaleX = 3.5
     game.scaleY = 2
@@ -42,7 +62,6 @@ function game.load()
     game.player2_speed = 150
     game.player2_rotation = math.rad(-90)
 
-    -- Load turret sprites for each player
     spriteSheet1 = love.graphics.newImage("assets/Blue/Weapons/canon.png")
     spriteSheet2 = love.graphics.newImage("assets/Red/Weapons/canon.png")
 
@@ -76,7 +95,12 @@ function game.update(dt)
         local bullet = bullets[i]
         Bullet.update(bullet, dt)
         -- Vérification des collisions avec le joueur 2
-        if checkCollision(bullet, {x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}) then
+        if checkCollision(bullet, {
+            x = game.player2_x,
+            y = game.player2_y,
+            width = game.player2:getWidth(),
+            height = game.player2:getHeight()
+        }) then
             table.remove(bullets, i)
             player2.health = player2.health - 1
             if player2.health <= 0 then
@@ -95,7 +119,12 @@ function game.update(dt)
         local bullet = bullets2[i]
         Bullet.update(bullet, dt)
         -- Vérification des collisions avec le joueur 1
-        if checkCollision(bullet, {x = game.player1_x, y = game.player1_y, width = game.player1:getWidth(), height = game.player1:getHeight()}) then
+        if checkCollision(bullet, {
+            x = game.player1_x,
+            y = game.player1_y,
+            width = game.player1:getWidth(),
+            height = game.player1:getHeight()
+        }) then
             table.remove(bullets2, i)
             player1.health = player1.health - 1
             if player1.health <= 0 then
@@ -132,6 +161,39 @@ function game.update(dt)
             end
         end
     end
+
+    -- Vérification des collisions avec le bonus bullet
+    if bonus_bullet.active then
+        if checkCollision({x = game.player1_x, y = game.player1_y, width = game.player1:getWidth(), height = game.player1:getHeight()}, bonus_bullet) then
+            bonus_bullet.active = false
+            player1.bonusActive = true
+            player1.bonusTimer = bonus_bullet.duration
+            player1.fireRate = 0.1
+        elseif checkCollision({x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}, bonus_bullet) then
+            bonus_bullet.active = false
+            player2.bonusActive = true
+            player2.bonusTimer = bonus_bullet.duration
+            player2.fireRate = 0.1
+        end
+    end
+
+    -- Gestion du bonus pour player1
+    if player1.bonusActive then
+        player1.bonusTimer = player1.bonusTimer - dt
+        if player1.bonusTimer <= 0 then
+            player1.bonusActive = false
+            player1.fireRate = 0.5
+        end
+    end
+
+    -- Gestion du bonus pour player2
+    if player2.bonusActive then
+        player2.bonusTimer = player2.bonusTimer - dt
+        if player2.bonusTimer <= 0 then
+            player2.bonusActive = false
+            player2.fireRate = 0.5
+        end
+    end
 end
 
 function game.keypressed(key)
@@ -142,25 +204,34 @@ function game.keypressed(key)
         return
     end
 
-    if key == "t" and player1.isAlive then
+    local currentTime = love.timer.getTime()
+
+    if key == "t" and player1.isAlive and (currentTime - player1.lastShotTime >= player1.fireRate) then
         local bullet = Bullet.load(game.player1_x + game.player1:getWidth(), game.player1_y + game.player1:getHeight() / 2, 500)
         table.insert(bullets, bullet)
         player1.shooting = true
         player1.timer = 0
         player1.currentFrame = 2
+        player1.lastShotTime = currentTime
     end
 
-    if key == "m" and player2.isAlive then
+    if key == "m" and player2.isAlive and (currentTime - player2.lastShotTime >= player2.fireRate) then
         local bullet = Bullet.load(game.player2_x, game.player2_y + game.player2:getHeight() / 2, -500)
         table.insert(bullets2, bullet)
         player2.shooting = true
         player2.timer = 0
         player2.currentFrame = 2
+        player2.lastShotTime = currentTime
     end
 end
 
 function game.draw()
-    love.graphics.draw(game.image, 0, 0, 0, game.scaleX, game.scaleY)
+    love.graphics.draw(game.background, 0, 0, 0, game.scaleX, game.scaleY)
+
+    if bonus_bullet.active then
+        love.graphics.draw(game.bonus_bullet_image, bonus_bullet.x, bonus_bullet.y, 0, 0.5, 0.5)
+    end
+
     if player1.isAlive then
         local centerX = game.player1:getWidth() / 2
         local centerY = game.player1:getHeight() / 2
@@ -202,15 +273,23 @@ function game.restart()
         shooting = false,
         currentFrame = 1,
         timer = 0,
-        health = 5,
-        isAlive = true
+        health = 10,
+        isAlive = true,
+        fireRate = 0.5,
+        lastShotTime = 0,
+        bonusActive = false,
+        bonusTimer = 0
     }
     player2 = {
         shooting = false,
         currentFrame = 1,
         timer = 0,
-        health = 5,
-        isAlive = true
+        health = 10,
+        isAlive = true,
+        fireRate = 0.5,
+        lastShotTime = 0,
+        bonusActive = false,
+        bonusTimer = 0
     }
     bullets = {}
     bullets2 = {}
@@ -224,13 +303,15 @@ function game.restart()
     game.player2_x = 1600
     game.player2_y = 800
     game.player2_rotation = math.rad(-90)
+
+    bonus_bullet.active = true
 end
 
 function checkCollision(a, b)
     return a.x < b.x + b.width and
-           a.x + a.width > b.x and
-           a.y < b.y + b.height and
-           a.y + a.height > b.y
+        a.x + a.width > b.x and
+        a.y < b.y + b.height and
+        a.y + a.height > b.y
 end
 
 return game

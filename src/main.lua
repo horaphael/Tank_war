@@ -9,7 +9,7 @@ function love.load()
     love.window.setTitle("Tank War")
     sound = love.audio.newSource("assets/woo_scary.ogg", "stream")
     love.audio.setVolume(volume)
-    love.audio.play(sound)
+    -- love.audio.play(sound)
 end
 
 function love.update(dt)
