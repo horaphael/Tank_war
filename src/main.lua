@@ -1,3 +1,6 @@
+if pcall(require,"lldbugger") then require("lldbugger").start() end
+io.stdout:setvbuf("no")
+
 local game = require("game")
 local volume = 50
 function love.load()
