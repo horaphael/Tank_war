@@ -25,31 +25,31 @@ local gameOver = false
 local winner = ""
 
 function game.load()
-    game.image = love.graphics.newImage("back.jpg")
-    game.player1 = love.graphics.newImage("tank.png") -- Player 1 tank sprite
-    game.player2 = love.graphics.newImage("tank2.png") -- Player 2 tank sprite
+    game.image = love.graphics.newImage("assets/back.jpg")
+    game.player1 = love.graphics.newImage("assets/Blue/Bodies/body_tracks.png") -- Player 1 tank sprite
+    game.player2 = love.graphics.newImage("assets/Red/Bodies/body_tracks.png") -- Player 2 tank sprite
 
     game.scaleX = 3.5
     game.scaleY = 2
 
     game.player1_x = 100
     game.player1_y = 100
-    game.player1_speed = 200
+    game.player1_speed = 150
     game.player1_rotation = math.rad(90)
 
     game.player2_x = 1600
     game.player2_y = 800
-    game.player2_speed = 200
+    game.player2_speed = 150
     game.player2_rotation = math.rad(-90)
 
     -- Load turret sprites for each player
-    spriteSheet1 = love.graphics.newImage("turret_01_mk1.png")
-    spriteSheet2 = love.graphics.newImage("canon.png")
-    
+    spriteSheet1 = love.graphics.newImage("assets/Blue/Weapons/canon.png")
+    spriteSheet2 = love.graphics.newImage("assets/Red/Weapons/canon.png")
+
     local spriteWidth = 128
     local spriteHeight = 100
     local numFrames = 8
-    
+
     for i = 0, numFrames - 1 do
         quads1[i + 1] = love.graphics.newQuad(i * spriteWidth, 0, spriteWidth, spriteHeight, spriteSheet1:getDimensions())
         quads2[i + 1] = love.graphics.newQuad(i * spriteWidth, 0, spriteWidth, spriteHeight, spriteSheet2:getDimensions())

@@ -3,7 +3,7 @@ local move_player = {}
 function move_player.moveplayer1(game, windowWidth, windowHeight, dt)
     if love.keyboard.isDown('z') and game.player1_y > 0 then
         game.player1_rotation = math.rad(180)
-        game.player1_y = game.player1_y - game.player1_speed * dt  
+        game.player1_y = game.player1_y - game.player1_speed * dt
     end
     if love.keyboard.isDown('s') and game.player1_y < windowHeight - game.player1:getHeight() then
         game.player1_rotation = math.rad(360)
