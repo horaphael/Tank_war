@@ -288,7 +288,6 @@ function game.keypressed(key)
         player2.lastShotTime = currentTime
     end
 end
-
 function game.draw()
     love.graphics.draw(game.background, 0, 0, 0, game.scaleX, game.scaleY)
 
@@ -307,7 +306,12 @@ function game.draw()
         local cannonY1 = game.player1_y + centerY
         love.graphics.draw(game.player1, game.player1_x + centerX, game.player1_y + centerY, game.player1_rotation, 1, 1, centerX, centerY)
         love.graphics.draw(blueCanon, quads1[player1.currentFrame], cannonX1, cannonY1, math.rad(90), 1, 1, 64, 50)
-        love.graphics.print("Vies Player 1: " .. player1.health, 10, 10)
+
+        love.graphics.setColor(1, 0, 0)
+        love.graphics.rectangle("fill", 10, 10, 500, 20)
+        love.graphics.setColor(0, 1, 0)
+        love.graphics.rectangle("fill", 10, 10, 500 * (player1.health / 10), 20)
+        love.graphics.setColor(1, 1, 1)
     end
     if player2.isAlive then
         local centerX2 = game.player2:getWidth() / 2
@@ -316,7 +320,12 @@ function game.draw()
         local cannonY2 = game.player2_y + centerY2
         love.graphics.draw(game.player2, game.player2_x + centerX2, game.player2_y + centerY2, game.player2_rotation, 1, 1, centerX2, centerY2)
         love.graphics.draw(redCanon, quads2[player2.currentFrame], cannonX2, cannonY2, math.rad(-90), 1, 1, 64, 50)
-        love.graphics.print("Vies Player 2: " .. player2.health, 10, 30)
+
+        love.graphics.setColor(1, 0, 0)
+        love.graphics.rectangle("fill", 1410, 10, 500, 20)
+        love.graphics.setColor(0, 1, 0)
+        love.graphics.rectangle("fill", 1410, 10, 500 * (player2.health / 10), 20)
+        love.graphics.setColor(1, 1, 1)
     end
 
     for i, bullet in ipairs(bullets) do
