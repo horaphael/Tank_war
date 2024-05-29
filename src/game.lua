@@ -37,7 +37,20 @@ local bonus_bullet = {
     width = 50,
     height = 50,
     active = true,
-    duration = 5
+    duration = 5,
+    respawn_timer = 0,
+    respawn_delay = 5
+}
+
+local bonus_speed = {
+    x = 800,
+    y = 300,
+    width = 50,
+    height = 50,
+    active = true,
+    duration = 5,
+    respawn_timer = 0,
+    respawn_delay = 5
 }
 
 local gameOver = false
@@ -47,7 +60,8 @@ function game.load()
     game.background = love.graphics.newImage("assets/back.jpg")
     game.player1 = love.graphics.newImage("assets/Blue/Bodies/body_tracks.png") -- Player 1 tank sprite
     game.player2 = love.graphics.newImage("assets/Red/Bodies/body_tracks.png") -- Player 2 tank sprite
-    game.bonus_bullet_image = love.graphics.newImage("assets/bonus_bullet.png") -- Bonus bullet sprite
+    game.bonus_bullet_image = love.graphics.newImage("assets/Bonus/bonus_bullet.png") -- Bonus bullet sprite
+    game.bonus_speed_image = love.graphics.newImage("assets/Bonus/bonus_speed.png") -- Bonus speed sprite
 
     game.scaleX = 3.5
     game.scaleY = 2
@@ -62,16 +76,33 @@ function game.load()
     game.player2_speed = 150
     game.player2_rotation = math.rad(-90)
 
-    spriteSheet1 = love.graphics.newImage("assets/Blue/Weapons/canon.png")
-    spriteSheet2 = love.graphics.newImage("assets/Red/Weapons/canon.png")
+    blueCanon = love.graphics.newImage("assets/Blue/Weapons/canon.png")
+    redCanon = love.graphics.newImage("assets/Red/Weapons/canon.png")
 
     local spriteWidth = 128
     local spriteHeight = 100
     local numFrames = 8
 
     for i = 0, numFrames - 1 do
-        quads1[i + 1] = love.graphics.newQuad(i * spriteWidth, 0, spriteWidth, spriteHeight, spriteSheet1:getDimensions())
-        quads2[i + 1] = love.graphics.newQuad(i * spriteWidth, 0, spriteWidth, spriteHeight, spriteSheet2:getDimensions())
+        quads1[i + 1] = love.graphics.newQuad(i * spriteWidth, 0, spriteWidth, spriteHeight, blueCanon:getDimensions())
+        quads2[i + 1] = love.graphics.newQuad(i * spriteWidth, 0, spriteWidth, spriteHeight, redCanon:getDimensions())
+    end
+
+    game.spawnBonus()
+end
+
+function game.spawnBonus()
+    local windowWidth = love.graphics.getWidth()
+    local windowHeight = love.graphics.getHeight()
+
+    if not bonus_bullet.active then
+        bonus_bullet.x = math.random(0, windowWidth - bonus_bullet.width)
+        bonus_bullet.y = math.random(0, windowHeight - bonus_bullet.height)
+    end
+
+    if not bonus_speed.active then
+        bonus_speed.x = math.random(0, windowWidth - bonus_speed.width)
+        bonus_speed.y = math.random(0, windowHeight - bonus_speed.height)
     end
 end
 
@@ -166,14 +197,45 @@ function game.update(dt)
     if bonus_bullet.active then
         if checkCollision({x = game.player1_x, y = game.player1_y, width = game.player1:getWidth(), height = game.player1:getHeight()}, bonus_bullet) then
             bonus_bullet.active = false
+            bonus_bullet.respawn_timer = bonus_bullet.respawn_delay
             player1.bonusActive = true
             player1.bonusTimer = bonus_bullet.duration
             player1.fireRate = 0.1
         elseif checkCollision({x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}, bonus_bullet) then
             bonus_bullet.active = false
+            bonus_bullet.respawn_timer = bonus_bullet.respawn_delay
             player2.bonusActive = true
             player2.bonusTimer = bonus_bullet.duration
             player2.fireRate = 0.1
+        end
+    else
+        bonus_bullet.respawn_timer = bonus_bullet.respawn_timer - dt
+        if bonus_bullet.respawn_timer <= 0 then
+            game.spawnBonus()
+            bonus_bullet.active = true
+        end
+    end
+
+    -- Vérification des collisions avec le bonus speed
+    if bonus_speed.active then
+        if checkCollision({x = game.player1_x, y = game.player1_y, width = game.player1:getWidth(), height = game.player1:getHeight()}, bonus_speed) then
+            bonus_speed.active = false
+            bonus_speed.respawn_timer = bonus_speed.respawn_delay
+            player1.bonusActive = true
+            player1.bonusTimer = bonus_speed.duration
+            game.player1_speed = 300
+        elseif checkCollision({x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}, bonus_speed) then
+            bonus_speed.active = false
+            bonus_speed.respawn_timer = bonus_speed.respawn_delay
+            player2.bonusActive = true
+            player2.bonusTimer = bonus_speed.duration
+            game.player2_speed = 300
+        end
+    else
+        bonus_speed.respawn_timer = bonus_speed.respawn_timer - dt
+        if bonus_speed.respawn_timer <= 0 then
+            game.spawnBonus()
+            bonus_speed.active = true
         end
     end
 
@@ -183,6 +245,7 @@ function game.update(dt)
         if player1.bonusTimer <= 0 then
             player1.bonusActive = false
             player1.fireRate = 0.5
+            game.player1_speed = 150
         end
     end
 
@@ -192,6 +255,7 @@ function game.update(dt)
         if player2.bonusTimer <= 0 then
             player2.bonusActive = false
             player2.fireRate = 0.5
+            game.player2_speed = 150
         end
     end
 end
@@ -232,13 +296,17 @@ function game.draw()
         love.graphics.draw(game.bonus_bullet_image, bonus_bullet.x, bonus_bullet.y, 0, 0.5, 0.5)
     end
 
+    if bonus_speed.active then
+        love.graphics.draw(game.bonus_speed_image, bonus_speed.x, bonus_speed.y, 0, 0.2, 0.2)
+    end
+
     if player1.isAlive then
         local centerX = game.player1:getWidth() / 2
         local centerY = game.player1:getHeight() / 2
         local cannonX1 = game.player1_x + centerX
         local cannonY1 = game.player1_y + centerY
         love.graphics.draw(game.player1, game.player1_x + centerX, game.player1_y + centerY, game.player1_rotation, 1, 1, centerX, centerY)
-        love.graphics.draw(spriteSheet1, quads1[player1.currentFrame], cannonX1, cannonY1, math.rad(90), 1, 1, 64, 50)
+        love.graphics.draw(blueCanon, quads1[player1.currentFrame], cannonX1, cannonY1, math.rad(90), 1, 1, 64, 50)
         love.graphics.print("Vies Player 1: " .. player1.health, 10, 10)
     end
     if player2.isAlive then
@@ -247,7 +315,7 @@ function game.draw()
         local cannonX2 = game.player2_x + centerX2
         local cannonY2 = game.player2_y + centerY2
         love.graphics.draw(game.player2, game.player2_x + centerX2, game.player2_y + centerY2, game.player2_rotation, 1, 1, centerX2, centerY2)
-        love.graphics.draw(spriteSheet2, quads2[player2.currentFrame], cannonX2, cannonY2, math.rad(-90), 1, 1, 64, 50)
+        love.graphics.draw(redCanon, quads2[player2.currentFrame], cannonX2, cannonY2, math.rad(-90), 1, 1, 64, 50)
         love.graphics.print("Vies Player 2: " .. player2.health, 10, 30)
     end
 
@@ -280,6 +348,7 @@ function game.restart()
         bonusActive = false,
         bonusTimer = 0
     }
+
     player2 = {
         shooting = false,
         currentFrame = 1,
@@ -291,6 +360,7 @@ function game.restart()
         bonusActive = false,
         bonusTimer = 0
     }
+
     bullets = {}
     bullets2 = {}
     gameOver = false
@@ -299,12 +369,16 @@ function game.restart()
     game.player1_x = 100
     game.player1_y = 100
     game.player1_rotation = math.rad(90)
+    game.player1_speed = 150
 
     game.player2_x = 1600
     game.player2_y = 800
     game.player2_rotation = math.rad(-90)
+    game.player2_speed = 150
 
     bonus_bullet.active = true
+    bonus_speed.active = true
+    game.spawnBonus()
 end
 
 function checkCollision(a, b)
