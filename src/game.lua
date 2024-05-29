@@ -200,13 +200,13 @@ function game.update(dt)
             bonus_bullet.respawn_timer = bonus_bullet.respawn_delay
             player1.bonusActive = true
             player1.bonusTimer = bonus_bullet.duration
-            player1.fireRate = 0.1
+            player1.fireRate = 0.25
         elseif checkCollision({x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}, bonus_bullet) then
             bonus_bullet.active = false
             bonus_bullet.respawn_timer = bonus_bullet.respawn_delay
             player2.bonusActive = true
             player2.bonusTimer = bonus_bullet.duration
-            player2.fireRate = 0.1
+            player2.fireRate = 0.25
         end
     else
         bonus_bullet.respawn_timer = bonus_bullet.respawn_timer - dt
