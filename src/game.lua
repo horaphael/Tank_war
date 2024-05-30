@@ -1,10 +1,15 @@
 local game = {}
+
 local Bullet = require("bullet")
+local checkCollision = require("check_collision")
+local move_player = require("move_player")
+local spawnBonus = require("bonus")
+
 local bullets = {}
 local bullets2 = {}
-local move_player = require("move_player")
 local quads1 = {}
 local quads2 = {}
+
 local animationSpeed = 0.1
 
 local player1 = {
@@ -58,10 +63,12 @@ local winner = ""
 
 function game.load()
     game.background = love.graphics.newImage("assets/back.jpg")
-    game.player1 = love.graphics.newImage("assets/Blue/Bodies/body_tracks.png") -- Player 1 tank sprite
-    game.player2 = love.graphics.newImage("assets/Red/Bodies/body_tracks.png") -- Player 2 tank sprite
-    game.bonus_bullet_image = love.graphics.newImage("assets/Bonus/bonus_bullet.png") -- Bonus bullet sprite
-    game.bonus_speed_image = love.graphics.newImage("assets/Bonus/bonus_speed.png") -- Bonus speed sprite
+    game.player1 = love.graphics.newImage("assets/Blue/Bodies/body_tracks.png")
+    game.player2 = love.graphics.newImage("assets/Red/Bodies/body_tracks.png")
+    game.bonus_bullet_image = love.graphics.newImage("assets/Bonus/bonus_bullet.png")
+    game.bonus_speed_image = love.graphics.newImage("assets/Bonus/bonus_speed.png")
+    blueCanon = love.graphics.newImage("assets/Blue/Weapons/canon.png")
+    redCanon = love.graphics.newImage("assets/Red/Weapons/canon.png")
 
     game.scaleX = 3.5
     game.scaleY = 2
@@ -76,8 +83,6 @@ function game.load()
     game.player2_speed = 150
     game.player2_rotation = math.rad(-90)
 
-    blueCanon = love.graphics.newImage("assets/Blue/Weapons/canon.png")
-    redCanon = love.graphics.newImage("assets/Red/Weapons/canon.png")
 
     local spriteWidth = 128
     local spriteHeight = 100
@@ -88,22 +93,7 @@ function game.load()
         quads2[i + 1] = love.graphics.newQuad(i * spriteWidth, 0, spriteWidth, spriteHeight, redCanon:getDimensions())
     end
 
-    game.spawnBonus()
-end
-
-function game.spawnBonus()
-    local windowWidth = love.graphics.getWidth()
-    local windowHeight = love.graphics.getHeight()
-
-    if not bonus_bullet.active then
-        bonus_bullet.x = math.random(0, windowWidth - bonus_bullet.width)
-        bonus_bullet.y = math.random(0, windowHeight - bonus_bullet.height)
-    end
-
-    if not bonus_speed.active then
-        bonus_speed.x = math.random(0, windowWidth - bonus_speed.width)
-        bonus_speed.y = math.random(0, windowHeight - bonus_speed.height)
-    end
+    spawnBonus(bonus_bullet, bonus_speed)
 end
 
 function game.update(dt)
@@ -126,12 +116,7 @@ function game.update(dt)
         local bullet = bullets[i]
         Bullet.update(bullet, dt)
         -- Vérification des collisions avec le joueur 2
-        if checkCollision(bullet, {
-            x = game.player2_x,
-            y = game.player2_y,
-            width = game.player2:getWidth(),
-            height = game.player2:getHeight()
-        }) then
+        if checkCollision(bullet, {x = game.player2_x,y = game.player2_y,width = game.player2:getWidth(),height = game.player2:getHeight()}) then
             table.remove(bullets, i)
             player2.health = player2.health - 1
             if player2.health <= 0 then
@@ -150,12 +135,7 @@ function game.update(dt)
         local bullet = bullets2[i]
         Bullet.update(bullet, dt)
         -- Vérification des collisions avec le joueur 1
-        if checkCollision(bullet, {
-            x = game.player1_x,
-            y = game.player1_y,
-            width = game.player1:getWidth(),
-            height = game.player1:getHeight()
-        }) then
+        if checkCollision(bullet, {x = game.player1_x, y = game.player1_y,width = game.player1:getWidth(),height = game.player1:getHeight()}) then
             table.remove(bullets2, i)
             player1.health = player1.health - 1
             if player1.health <= 0 then
@@ -211,7 +191,7 @@ function game.update(dt)
     else
         bonus_bullet.respawn_timer = bonus_bullet.respawn_timer - dt
         if bonus_bullet.respawn_timer <= 0 then
-            game.spawnBonus()
+            spawnBonus(bonus_bullet, bonus_speed)
             bonus_bullet.active = true
         end
     end
@@ -234,7 +214,7 @@ function game.update(dt)
     else
         bonus_speed.respawn_timer = bonus_speed.respawn_timer - dt
         if bonus_speed.respawn_timer <= 0 then
-            game.spawnBonus()
+            spawnBonus(bonus_bullet, bonus_speed)
             bonus_speed.active = true
         end
     end
@@ -260,34 +240,6 @@ function game.update(dt)
     end
 end
 
-function game.keypressed(key)
-    if gameOver then
-        if key == "r" then
-            game.restart()
-        end
-    return
-end
-
-    local currentTime = love.timer.getTime()
-
-    if key == "t" and player1.isAlive and (currentTime - player1.lastShotTime >= player1.fireRate) then
-        local bullet = Bullet.load(game.player1_x + game.player1:getWidth(), game.player1_y + game.player1:getHeight() / 2, 500)
-        table.insert(bullets, bullet)
-        player1.shooting = true
-        player1.timer = 0
-        player1.currentFrame = 2
-        player1.lastShotTime = currentTime
-    end
-
-    if key == "m" and player2.isAlive and (currentTime - player2.lastShotTime >= player2.fireRate) then
-        local bullet = Bullet.load(game.player2_x, game.player2_y + game.player2:getHeight() / 2, -500)
-        table.insert(bullets2, bullet)
-        player2.shooting = true
-        player2.timer = 0
-        player2.currentFrame = 2
-        player2.lastShotTime = currentTime
-    end
-end
 function game.draw()
     love.graphics.draw(game.background, 0, 0, 0, game.scaleX, game.scaleY)
 
@@ -345,6 +297,34 @@ function game.draw()
     end
 end
 
+function game.keypressed(key)
+    if gameOver then
+        if key == "r" then
+            game.restart()
+        end return
+    end
+
+    local currentTime = love.timer.getTime()
+
+    if key == "t" and player1.isAlive and (currentTime - player1.lastShotTime >= player1.fireRate) then
+        local bullet = Bullet.load(game.player1_x + game.player1:getWidth(), game.player1_y + game.player1:getHeight() / 2, 500)
+        table.insert(bullets, bullet)
+        player1.shooting = true
+        player1.timer = 0
+        player1.currentFrame = 2
+        player1.lastShotTime = currentTime
+    end
+
+    if key == "m" and player2.isAlive and (currentTime - player2.lastShotTime >= player2.fireRate) then
+        local bullet = Bullet.load(game.player2_x, game.player2_y + game.player2:getHeight() / 2, -500)
+        table.insert(bullets2, bullet)
+        player2.shooting = true
+        player2.timer = 0
+        player2.currentFrame = 2
+        player2.lastShotTime = currentTime
+    end
+end
+
 function game.pause()
     love.graphics.setColor(0.5, 0.5, 0.5, 0.7)
 end
@@ -391,14 +371,7 @@ function game.restart()
 
     bonus_bullet.active = true
     bonus_speed.active = true
-    game.spawnBonus()
-end
-
-function checkCollision(a, b)
-    return a.x < b.x + b.width and
-        a.x + a.width > b.x and
-        a.y < b.y + b.height and
-        a.y + a.height > b.y
+    spawnBonus(bonus_bullet, bonus_speed)
 end
 
 return game

@@ -10,6 +10,7 @@ gameState = "loading"  -- "loading", "menu", "settings", "game", "pause"
 local loadingFont
 local loading_sprite
 local loadingTimer = 0
+local volume = 50
 
 function setGameState(state)
     gameState = state
@@ -21,6 +22,9 @@ function love.load()
 
     loadingFont = love.graphics.newFont(30)
     loading_sprite = love.graphics.newImage("assets/loading.png")
+    sound = love.audio.newSource("assets/woo_scary.ogg", "stream")
+    love.audio.setVolume(volume)
+    love.audio.play(sound)
 
     menu.load()
 end

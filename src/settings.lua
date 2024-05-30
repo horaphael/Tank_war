@@ -1,5 +1,6 @@
 local settings = {}
 
+local game = require('game')
 local buttons = {}
 local buttonWidth = 300
 local buttonHeight = 100
@@ -11,11 +12,13 @@ local buttonState = {
 }
 
 local settingsFont
-local loading_sprite
+local settings_background
+
+local soundEnabled = true
 
 function settings.load()
     settingsFont = love.graphics.newFont(30)
-    loading_sprite = love.graphics.newImage("assets/loading.png")
+    settings_background = love.graphics.newImage("assets/settings_background.jpg")
 
     buttons = {
         {
@@ -39,6 +42,18 @@ function settings.load()
             onClick = function()
                 gameState = "menu"
             end
+        },
+        {
+            x = love.graphics.getWidth() / 2 - buttonWidth / 2,
+            y = love.graphics.getHeight() / 2 + 230,
+            width = buttonWidth,
+            height = buttonHeight,
+            state = "normal",
+            text = "Sound: On",
+            onClick = function()
+                soundEnabled = not soundEnabled
+                buttons[3].text = soundEnabled and "Sound: On" or "Sound: Off"
+            end
         }
     }
 end
@@ -59,7 +74,7 @@ function settings.update(dt)
 end
 
 function settings.draw()
-    love.graphics.draw(loading_sprite, 0, 0, 0, 0.76, 1)
+    love.graphics.draw(settings_background, 0, 0, 0, 1, 1)
 
     love.graphics.setFont(settingsFont)
     for _, button in ipairs(buttons) do
