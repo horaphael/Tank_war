@@ -10,6 +10,15 @@ local bullets2 = {}
 local quads1 = {}
 local quads2 = {}
 
+local buttons = {}
+local buttonWidth = 300
+local buttonHeight = 100
+local buttonState = {
+    normal = love.graphics.newImage("assets/Button/normal.png"),
+    hover = love.graphics.newImage("assets/Button/hover.png"),
+    pressed = love.graphics.newImage("assets/Button/pressed.png")
+}
+
 local animationSpeed = 0.1
 
 local player1 = {
@@ -58,6 +67,12 @@ local bonus_speed = {
     respawn_delay = 5
 }
 
+local keybinds = {
+    shoot1 = "t",
+    shoot2 = "m"
+}
+
+local isPaused = false
 local gameOver = false
 local winner = ""
 
@@ -93,11 +108,63 @@ function game.load()
         quads2[i + 1] = love.graphics.newQuad(i * spriteWidth, 0, spriteWidth, spriteHeight, redCanon:getDimensions())
     end
 
+    buttons = {
+        {
+            x = love.graphics.getWidth() / 2 - buttonWidth / 2,
+            y = love.graphics.getHeight() / 2 - buttonHeight,
+            width = buttonWidth,
+            height = buttonHeight,
+            state = "normal",
+            text = "Resume",
+            onClick = function()
+                isPaused = false
+            end
+        },
+        {
+            x = love.graphics.getWidth() / 2 - buttonWidth / 2,
+            y = love.graphics.getHeight() / 2 - buttonHeight + 120,
+            width = buttonWidth,
+            height = buttonHeight,
+            state = "normal",
+            text = "Settings",
+            onClick = function()
+                isPaused = false
+                gameState = "settings"
+            end
+        },
+        {
+            x = love.graphics.getWidth() / 2 - buttonWidth / 2,
+            y = love.graphics.getHeight() / 2 - buttonHeight + 240,
+            width = buttonWidth,
+            height = buttonHeight,
+            state = "normal",
+            text = "Quit",
+            onClick = function()
+                isPaused = false
+                gameState = "menu"
+            end
+        }
+    }
+
     spawnBonus(bonus_bullet, bonus_speed)
 end
 
 function game.update(dt)
-    if gameOver then
+    local mx, my = love.mouse.getPosition()
+
+    for _, button in ipairs(buttons) do
+        if mx > button.x and mx < button.x + button.width and my > button.y and my < button.y + button.height then
+            if love.mouse.isDown(1) then
+                button.state = "pressed"
+            else
+                button.state = "hover"
+            end
+        else
+            button.state = "normal"
+        end
+    end
+
+    if gameOver or isPaused then
         return
     end
 
@@ -116,7 +183,7 @@ function game.update(dt)
         local bullet = bullets[i]
         Bullet.update(bullet, dt)
         -- Vérification des collisions avec le joueur 2
-        if checkCollision(bullet, {x = game.player2_x,y = game.player2_y,width = game.player2:getWidth(),height = game.player2:getHeight()}) then
+        if checkCollision(bullet, {x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}) then
             table.remove(bullets, i)
             player2.health = player2.health - 1
             if player2.health <= 0 then
@@ -135,7 +202,7 @@ function game.update(dt)
         local bullet = bullets2[i]
         Bullet.update(bullet, dt)
         -- Vérification des collisions avec le joueur 1
-        if checkCollision(bullet, {x = game.player1_x, y = game.player1_y,width = game.player1:getWidth(),height = game.player1:getHeight()}) then
+        if checkCollision(bullet, {x = game.player1_x, y = game.player1_y, width = game.player1:getWidth(), height = game.player1:getHeight()}) then
             table.remove(bullets2, i)
             player1.health = player1.health - 1
             if player1.health <= 0 then
@@ -265,6 +332,7 @@ function game.draw()
         love.graphics.rectangle("fill", 10, 10, 500 * (player1.health / 10), 20)
         love.graphics.setColor(1, 1, 1)
     end
+
     if player2.isAlive then
         local centerX2 = game.player2:getWidth() / 2
         local centerY2 = game.player2:getHeight() / 2
@@ -295,18 +363,39 @@ function game.draw()
         love.graphics.printf(winner .. " a gagné !", 0, love.graphics.getHeight() / 2, love.graphics.getWidth(), "center")
         love.graphics.printf("Appuyez sur 'R' pour recommencer", 0, love.graphics.getHeight() / 2 + 30, love.graphics.getWidth(), "center")
     end
+
+    if isPaused then
+        love.graphics.setColor(0.5, 0.5, 0.5, 0.7)
+        love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.printf("Pause", 0, buttonHeight + 20, love.graphics.getWidth(), "center")
+
+        for _, button in ipairs(buttons) do
+            love.graphics.draw(buttonState[button.state], button.x, button.y, 0, button.width / buttonState[button.state]:getWidth(), button.height / buttonState[button.state]:getHeight())
+            love.graphics.printf(button.text, button.x, button.y + (button.height / 2 - 10), button.width, "center")
+        end
+    end
 end
 
 function game.keypressed(key)
+    if key == "escape" then
+        isPaused = not isPaused
+        return
+    end
+
     if gameOver then
         if key == "r" then
             game.restart()
         end return
     end
 
+    if isPaused then
+        return
+    end
+
     local currentTime = love.timer.getTime()
 
-    if key == "t" and player1.isAlive and (currentTime - player1.lastShotTime >= player1.fireRate) then
+    if key == keybinds.shoot1 and player1.isAlive and (currentTime - player1.lastShotTime >= player1.fireRate) then
         local bullet = Bullet.load(game.player1_x + game.player1:getWidth(), game.player1_y + game.player1:getHeight() / 2, 500)
         table.insert(bullets, bullet)
         player1.shooting = true
@@ -315,7 +404,7 @@ function game.keypressed(key)
         player1.lastShotTime = currentTime
     end
 
-    if key == "m" and player2.isAlive and (currentTime - player2.lastShotTime >= player2.fireRate) then
+    if key == keybinds.shoot2 and player2.isAlive and (currentTime - player2.lastShotTime >= player2.fireRate) then
         local bullet = Bullet.load(game.player2_x, game.player2_y + game.player2:getHeight() / 2, -500)
         table.insert(bullets2, bullet)
         player2.shooting = true
@@ -325,34 +414,36 @@ function game.keypressed(key)
     end
 end
 
-function game.pause()
-    love.graphics.setColor(0.5, 0.5, 0.5, 0.7)
+function game.mousepressed(x, y, button, istouch, presses)
+    if button == 1 then
+        for _, btn in ipairs(buttons) do
+            if x > btn.x and x < btn.x + btn.width and y > btn.y and y < btn.y + btn.height then
+                btn.onClick()
+            end
+        end
+    end
 end
 
 function game.restart()
-    player1 = {
-        shooting = false,
-        currentFrame = 1,
-        timer = 0,
-        health = 10,
-        isAlive = true,
-        fireRate = 0.5,
-        lastShotTime = 0,
-        bonusActive = false,
-        bonusTimer = 0
-    }
+    player1.shooting = false
+    player1.currentFrame = 1
+    player1.timer = 0
+    player1.health = 10
+    player1.isAlive = true
+    player1.fireRate = 0.5
+    player1.lastShotTime = 0
+    player1.bonusActive = false
+    player1.bonusTimer = 0
 
-    player2 = {
-        shooting = false,
-        currentFrame = 1,
-        timer = 0,
-        health = 10,
-        isAlive = true,
-        fireRate = 0.5,
-        lastShotTime = 0,
-        bonusActive = false,
-        bonusTimer = 0
-    }
+    player2.shooting = false
+    player2.currentFrame = 1
+    player2.timer = 0
+    player2.health = 10
+    player2.isAlive = true
+    player2.fireRate = 0.5
+    player2.lastShotTime = 0
+    player2.bonusActive = false
+    player2.bonusTimer = 0
 
     bullets = {}
     bullets2 = {}

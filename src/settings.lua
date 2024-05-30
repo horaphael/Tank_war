@@ -16,6 +16,13 @@ local settings_background
 
 local soundEnabled = true
 
+local keybinds = {
+    shoot1 = "t",
+    shoot2 = "m"
+}
+
+local waitingForKey = nil
+
 function settings.load()
     settingsFont = love.graphics.newFont(30)
     settings_background = love.graphics.newImage("assets/settings_background.jpg")
@@ -23,36 +30,47 @@ function settings.load()
     buttons = {
         {
             x = love.graphics.getWidth() / 2 - buttonWidth / 2,
-            y = love.graphics.getHeight() / 2 - 10,
-            width = buttonWidth,
-            height = buttonHeight,
-            state = "normal",
-            text = "Option 1",
-            onClick = function()
-                print("Option 1 clicked")
-            end
-        },
-        {
-            x = love.graphics.getWidth() / 2 - buttonWidth / 2,
-            y = love.graphics.getHeight() / 2 + 110,
-            width = buttonWidth,
-            height = buttonHeight,
-            state = "normal",
-            text = "Back",
-            onClick = function()
-                gameState = "menu"
-            end
-        },
-        {
-            x = love.graphics.getWidth() / 2 - buttonWidth / 2,
-            y = love.graphics.getHeight() / 2 + 230,
+            y = love.graphics.getHeight() / 3,
             width = buttonWidth,
             height = buttonHeight,
             state = "normal",
             text = "Sound: On",
             onClick = function()
                 soundEnabled = not soundEnabled
-                buttons[3].text = soundEnabled and "Sound: On" or "Sound: Off"
+                buttons[1].text = soundEnabled and "Sound: On" or "Sound: Off"
+            end
+        },
+        {
+            x = love.graphics.getWidth() / 2 - buttonWidth / 2,
+            y = love.graphics.getHeight() / 3 + 120,
+            width = buttonWidth,
+            height = buttonHeight,
+            state = "normal",
+            text = "Shoot 1: " .. keybinds.shoot1,
+            onClick = function()
+                waitingForKey = "shoot1"
+            end
+        },
+        {
+            x = love.graphics.getWidth() / 2 - buttonWidth / 2,
+            y = love.graphics.getHeight() / 3 + 240,
+            width = buttonWidth,
+            height = buttonHeight,
+            state = "normal",
+            text = "Shoot 2: " .. keybinds.shoot2,
+            onClick = function()
+                waitingForKey = "shoot2"
+            end
+        },
+        {
+            x = love.graphics.getWidth() - buttonWidth - 20,
+            y = love.graphics.getHeight() - buttonHeight - 30,
+            width = buttonWidth,
+            height = buttonHeight,
+            state = "normal",
+            text = "Back",
+            onClick = function()
+                gameState = "menu"
             end
         }
     }
@@ -71,6 +89,12 @@ function settings.update(dt)
             button.state = "normal"
         end
     end
+
+    if not soundEnabled then
+        love.audio.setVolume(0)
+    else
+        love.audio.setVolume(50)
+    end
 end
 
 function settings.draw()
@@ -81,6 +105,10 @@ function settings.draw()
         love.graphics.draw(buttonState[button.state], button.x, button.y, 0, button.width / buttonState[button.state]:getWidth(), button.height / buttonState[button.state]:getHeight())
         love.graphics.printf(button.text, button.x, button.y + (button.height / 2 - 10), button.width, "center")
     end
+
+    if waitingForKey then
+        love.graphics.printf("Press a key for " .. waitingForKey, 0, love.graphics.getHeight() / 2 - 50, love.graphics.getWidth(), "center")
+    end
 end
 
 function settings.mousepressed(x, y, button, istouch, presses)
@@ -90,6 +118,18 @@ function settings.mousepressed(x, y, button, istouch, presses)
                 btn.onClick()
             end
         end
+    end
+end
+
+function settings.keypressed(key)
+    if waitingForKey then
+        keybinds[waitingForKey] = key
+        for _, btn in ipairs(buttons) do
+            if btn.text:find(waitingForKey) then
+                btn.text = waitingForKey:sub(1, 1):upper() .. waitingForKey:sub(2) .. ": " .. key
+            end
+        end
+        waitingForKey = nil
     end
 end
 

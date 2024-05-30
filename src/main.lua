@@ -63,6 +63,8 @@ function love.mousepressed(x, y, button, istouch, presses)
         menu.mousepressed(x, y, button, istouch, presses)
     elseif gameState == "settings" then
         settings.mousepressed(x, y, button, istouch, presses)
+    elseif gameState == "game" then
+        game.mousepressed(x, y, button, istouch, presses)
     end
 end
 
@@ -70,6 +72,7 @@ function love.keypressed(key)
     if gameState == "menu" then
         menu.keypressed(key)
     elseif gameState == "settings" and key == "escape" then
+        settings.keypressed(key)
         setGameState("menu")
     elseif gameState == "game" then
         game.keypressed(key)
