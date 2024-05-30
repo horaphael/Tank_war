@@ -265,8 +265,8 @@ function game.keypressed(key)
         if key == "r" then
             game.restart()
         end
-        return
-    end
+    return
+end
 
     local currentTime = love.timer.getTime()
 
@@ -343,6 +343,10 @@ function game.draw()
         love.graphics.printf(winner .. " a gagné !", 0, love.graphics.getHeight() / 2, love.graphics.getWidth(), "center")
         love.graphics.printf("Appuyez sur 'R' pour recommencer", 0, love.graphics.getHeight() / 2 + 30, love.graphics.getWidth(), "center")
     end
+end
+
+function game.pause()
+    love.graphics.setColor(0.5, 0.5, 0.5, 0.7)
 end
 
 function game.restart()
