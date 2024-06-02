@@ -9,6 +9,7 @@ local bullets = {}
 local bullets2 = {}
 local quads1 = {}
 local quads2 = {}
+local obstacles = {}
 
 local buttons = {}
 local buttonWidth = 300
@@ -146,6 +147,12 @@ function game.load()
         }
     }
 
+    table.insert(obstacles, {x = 250, y = 600, width = 20, height = 200})
+    table.insert(obstacles, {x = 1300, y = 150, width = 20, height = 200})
+    lake = {x = 580, y = 150, width = 200, height = 350}
+    lake2 = {x = 1150, y = 700, width = 300, height = 300}
+    square = {x = 50, y = 800, width = 150, height = 150}
+    square2 = {x = 1700, y = 50, width = 150, height = 150}
     spawnBonus(bonus_bullet, bonus_speed)
 end
 
@@ -170,6 +177,11 @@ function game.update(dt)
 
     local windowWidth = love.graphics.getWidth()
     local windowHeight = love.graphics.getHeight()
+    local prev_player1_x = game.player1_x
+    local prev_player1_y = game.player1_y
+    local prev_player2_x = game.player2_x
+    local prev_player2_y = game.player2_y
+
 
     if player1.isAlive then
         move_player.moveplayer1(game, windowWidth, windowHeight, dt)
@@ -216,6 +228,24 @@ function game.update(dt)
         end
     end
 
+    for i, bullet in ipairs(bullets) do
+        for j, obstacle in ipairs(obstacles) do
+            if checkCollision(bullet, obstacle)  then
+                table.remove(bullets, i)
+                break
+            end
+        end
+    end
+
+    for i, bullet in ipairs(bullets2) do
+        for j, obstacle in ipairs(obstacles) do
+            if checkCollision(bullet, obstacle)  then
+                table.remove(bullets2, i)
+                break
+            end
+        end
+    end
+
     if player1.shooting then
         player1.timer = player1.timer + dt
         if player1.timer >= animationSpeed then
@@ -240,7 +270,6 @@ function game.update(dt)
         end
     end
 
-    -- Vérification des collisions avec le bonus bullet
     if bonus_bullet.active then
         if checkCollision({x = game.player1_x, y = game.player1_y, width = game.player1:getWidth(), height = game.player1:getHeight()}, bonus_bullet) then
             bonus_bullet.active = false
@@ -305,6 +334,61 @@ function game.update(dt)
             game.player2_speed = 150
         end
     end
+
+    for _, obstacle in ipairs(obstacles) do
+        if checkCollision({x = game.player1_x, y = game.player1_y, width = game.player1:getWidth(), height = game.player1:getHeight()}, obstacle) then
+            game.player1_x = prev_player1_x
+            game.player1_y = prev_player1_y
+        end
+    end
+
+    for _, obstacle in ipairs(obstacles) do
+        if checkCollision({x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}, obstacle) then
+            game.player2_x = prev_player2_x
+            game.player2_y = prev_player2_y
+        end
+    end
+
+    if checkCollision({x = game.player1_x, y = game.player1_y, width = game.player1:getWidth(), height = game.player1:getHeight()}, lake) then
+        game.player1_x = prev_player1_x
+        game.player1_y = prev_player1_y
+    end
+
+    if checkCollision({x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}, lake) then
+        game.player2_x = prev_player2_x
+        game.player2_y = prev_player2_y
+    end
+
+    if checkCollision({x = game.player1_x, y = game.player1_y, width = game.player1:getWidth(), height = game.player1:getHeight()}, lake2) then
+        game.player1_x = prev_player1_x
+        game.player1_y = prev_player1_y
+    end
+
+    if checkCollision({x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}, lake2) then
+        game.player2_x = prev_player2_x
+        game.player2_y = prev_player2_y
+    end
+
+    if checkCollision({x = game.player1_x, y = game.player1_y, width = game.player1:getWidth(), height = game.player1:getHeight()}, square) then
+        game.player1_x = 1700
+        game.player1_y = 300
+    end
+        
+    if checkCollision({x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}, square2) then
+        game.player2_x = 50
+        game.player2_y = 600
+    end
+
+    if checkCollision({x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}, square) then
+        game.player2_x = 1700
+        game.player2_y = 300
+    end
+        
+    if checkCollision({x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}, square2) then
+        game.player2_x = 50
+        game.player2_y = 600
+    end
+
 end
 
 function game.draw()
@@ -355,6 +439,26 @@ function game.draw()
     for i, bullet in ipairs(bullets2) do
         Bullet.draw(bullet)
     end
+
+    love.graphics.setColor(0.5, 0.5, 0.5)
+    love.graphics.rectangle("fill", 250, 600, 20, 200)
+    love.graphics.rectangle("fill", 1300, 150, 20, 200)
+
+    love.graphics.setColor(0, 0, 1, 0.5)
+    love.graphics.rectangle("fill", lake.x, lake.y, lake.width, lake.height)
+    love.graphics.setColor(1, 1, 1)
+
+    love.graphics.setColor(0, 0, 1, 0.5)
+    love.graphics.rectangle("fill", lake2.x, lake2.y, lake2.width, lake2.height)
+    love.graphics.setColor(1, 1, 1)
+
+    love.graphics.setColor(0.5, 0.5, 0.5)
+    love.graphics.rectangle("fill", square.x, square.y, square.width, square.height)
+    love.graphics.setColor(1, 1, 1)
+
+    love.graphics.setColor(0.5, 0.5, 0.5)
+    love.graphics.rectangle("fill", square2.x, square2.y, square2.width, square2.height)
+    love.graphics.setColor(1, 1, 1)
 
     if gameOver then
         love.graphics.setColor(0.5, 0.5, 0.5, 0.7)
