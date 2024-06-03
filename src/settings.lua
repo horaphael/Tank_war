@@ -18,7 +18,7 @@ local soundEnabled = true
 
 local keybinds = {
     shoot1 = "t",
-    shoot2 = "m"
+    shoot2 = "n"
 }
 
 local waitingForKey = nil

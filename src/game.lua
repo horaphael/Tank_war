@@ -70,7 +70,7 @@ local bonus_speed = {
 
 local keybinds = {
     shoot1 = "t",
-    shoot2 = "m"
+    shoot2 = "n"
 }
 
 local isPaused = false
@@ -93,11 +93,13 @@ function game.load()
     game.player1_y = 100
     game.player1_speed = 150
     game.player1_rotation = math.rad(90)
+    game.player1_rotationCanon = math.rad(90)
 
     game.player2_x = 1600
     game.player2_y = 800
     game.player2_speed = 150
     game.player2_rotation = math.rad(-90)
+    game.player2_rotationCanon = math.rad(-90)
 
 
     local spriteWidth = 128
@@ -182,10 +184,10 @@ function game.update(dt)
     local prev_player2_x = game.player2_x
     local prev_player2_y = game.player2_y
 
-
     if player1.isAlive then
         move_player.moveplayer1(game, windowWidth, windowHeight, dt)
     end
+
     if player2.isAlive then
         move_player.moveplayer2(game, windowWidth, windowHeight, dt)
     end
@@ -204,7 +206,9 @@ function game.update(dt)
                 winner = "Player 1"
             end
         end
-        if bullet.x > love.graphics.getWidth() then
+
+        -- Vérification des collisions avec les bords de la fenêtre
+        if bullet.x > love.graphics.getWidth() or bullet.x < 0 or bullet.y > love.graphics.getHeight() or bullet.y < 0 then
             table.remove(bullets, i)
         end
     end
@@ -223,11 +227,14 @@ function game.update(dt)
                 winner = "Player 2"
             end
         end
-        if bullet.x < 0 then
+
+        -- Vérification des collisions avec les bords de la fenêtre
+        if bullet.x > love.graphics.getWidth() or bullet.x < 0 or bullet.y > love.graphics.getHeight() or bullet.y < 0 then
             table.remove(bullets2, i)
         end
     end
 
+    -- Vérification des collisions des balles avec les obstacles
     for i, bullet in ipairs(bullets) do
         for j, obstacle in ipairs(obstacles) do
             if checkCollision(bullet, obstacle)  then
@@ -373,7 +380,7 @@ function game.update(dt)
         game.player1_x = 1700
         game.player1_y = 300
     end
-        
+
     if checkCollision({x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}, square2) then
         game.player2_x = 50
         game.player2_y = 600
@@ -383,7 +390,7 @@ function game.update(dt)
         game.player2_x = 1700
         game.player2_y = 300
     end
-        
+
     if checkCollision({x = game.player2_x, y = game.player2_y, width = game.player2:getWidth(), height = game.player2:getHeight()}, square2) then
         game.player2_x = 50
         game.player2_y = 600
@@ -408,7 +415,7 @@ function game.draw()
         local cannonX1 = game.player1_x + centerX
         local cannonY1 = game.player1_y + centerY
         love.graphics.draw(game.player1, game.player1_x + centerX, game.player1_y + centerY, game.player1_rotation, 1, 1, centerX, centerY)
-        love.graphics.draw(blueCanon, quads1[player1.currentFrame], cannonX1, cannonY1, math.rad(90), 1, 1, 64, 50)
+        love.graphics.draw(blueCanon, quads1[player1.currentFrame], cannonX1, cannonY1, game.player1_rotationCanon, 1, 1, 64, 50)
 
         love.graphics.setColor(1, 0, 0)
         love.graphics.rectangle("fill", 10, 10, 500, 20)
@@ -423,7 +430,7 @@ function game.draw()
         local cannonX2 = game.player2_x + centerX2
         local cannonY2 = game.player2_y + centerY2
         love.graphics.draw(game.player2, game.player2_x + centerX2, game.player2_y + centerY2, game.player2_rotation, 1, 1, centerX2, centerY2)
-        love.graphics.draw(redCanon, quads2[player2.currentFrame], cannonX2, cannonY2, math.rad(-90), 1, 1, 64, 50)
+        love.graphics.draw(redCanon, quads2[player2.currentFrame], cannonX2, cannonY2, game.player2_rotationCanon, 1, 1, 64, 50)
 
         love.graphics.setColor(1, 0, 0)
         love.graphics.rectangle("fill", 1410, 10, 500, 20)
@@ -481,6 +488,16 @@ function game.draw()
     end
 end
 
+function game.mousepressed(x, y, button, istouch, presses)
+    if button == 1 then
+        for _, btn in ipairs(buttons) do
+            if x > btn.x and x < btn.x + btn.width and y > btn.y and y < btn.y + btn.height then
+                btn.onClick()
+            end
+        end
+    end
+end
+
 function game.keypressed(key)
     if key == "escape" then
         isPaused = not isPaused
@@ -499,8 +516,28 @@ function game.keypressed(key)
 
     local currentTime = love.timer.getTime()
 
+    if key == "a" and player1.isAlive then
+        game.player1_rotationCanon = game.player1_rotationCanon - math.rad(10)
+    end
+
+    if key == "e" and player1.isAlive then
+        game.player1_rotationCanon = game.player1_rotationCanon + math.rad(10)
+    end
+
+    if key == "i" and player2.isAlive then
+        game.player2_rotationCanon = game.player2_rotationCanon - math.rad(10)
+    end
+
+    if key == "p" and player2.isAlive then
+        game.player2_rotationCanon = game.player2_rotationCanon + math.rad(10)
+    end
+
     if key == keybinds.shoot1 and player1.isAlive and (currentTime - player1.lastShotTime >= player1.fireRate) then
-        local bullet = Bullet.load(game.player1_x + game.player1:getWidth(), game.player1_y + game.player1:getHeight() / 2, 500)
+        local bulletX = game.player1_x + game.player1:getWidth() / 2
+        local bulletY = game.player1_y + game.player1:getHeight() / 2
+        local angle = game.player1_rotationCanon
+        local speed = 500
+        local bullet = Bullet.load(bulletX, bulletY, speed, angle - math.rad(90))
         table.insert(bullets, bullet)
         player1.shooting = true
         player1.timer = 0
@@ -509,7 +546,11 @@ function game.keypressed(key)
     end
 
     if key == keybinds.shoot2 and player2.isAlive and (currentTime - player2.lastShotTime >= player2.fireRate) then
-        local bullet = Bullet.load(game.player2_x, game.player2_y + game.player2:getHeight() / 2, -500)
+        local bulletX = game.player2_x + game.player2:getWidth() / 2
+        local bulletY = game.player2_y + game.player2:getHeight() / 2
+        local angle = game.player2_rotationCanon
+        local speed = 500
+        local bullet = Bullet.load(bulletX, bulletY, speed, angle + math.rad(-90))
         table.insert(bullets2, bullet)
         player2.shooting = true
         player2.timer = 0
@@ -518,15 +559,6 @@ function game.keypressed(key)
     end
 end
 
-function game.mousepressed(x, y, button, istouch, presses)
-    if button == 1 then
-        for _, btn in ipairs(buttons) do
-            if x > btn.x and x < btn.x + btn.width and y > btn.y and y < btn.y + btn.height then
-                btn.onClick()
-            end
-        end
-    end
-end
 
 function game.restart()
     player1.shooting = false
@@ -538,6 +570,7 @@ function game.restart()
     player1.lastShotTime = 0
     player1.bonusActive = false
     player1.bonusTimer = 0
+    game.player1_rotationCanon = math.rad(90)
 
     player2.shooting = false
     player2.currentFrame = 1
@@ -548,6 +581,7 @@ function game.restart()
     player2.lastShotTime = 0
     player2.bonusActive = false
     player2.bonusTimer = 0
+    game.player2_rotationCanon = math.rad(-90)
 
     bullets = {}
     bullets2 = {}
