@@ -452,11 +452,11 @@ function game.draw()
     love.graphics.rectangle("fill", lake2.x, lake2.y, lake2.width, lake2.height)
     love.graphics.setColor(1, 1, 1)
 
-    love.graphics.setColor(0.5, 0.5, 0.5)
+    love.graphics.setColor(0, 191/255, 255/255, 127/255)
     love.graphics.rectangle("fill", square.x, square.y, square.width, square.height)
     love.graphics.setColor(1, 1, 1)
 
-    love.graphics.setColor(0.5, 0.5, 0.5)
+    love.graphics.setColor(1, 0.5, 0)
     love.graphics.rectangle("fill", square2.x, square2.y, square2.width, square2.height)
     love.graphics.setColor(1, 1, 1)
 
